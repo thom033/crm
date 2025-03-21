@@ -4,6 +4,7 @@
         <!-- Sidebar navigation-->
         <nav class="sidebar-nav">
             <ul id="sidebarnav" th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'') or hasRole(''ROLE_EMPLOYEE'')')}">
+                
                 <li class="user-pro">
                     <a class="has-arrow waves-effect waves-dark" href="javascript:void(0)" aria-expanded="false">
                         <img th:if="${#authentication.principal instanceof T(org.springframework.security.oauth2.core.user.OAuth2User)}" th:src="${#authentication.principal.picture}" alt="user-img" class="img-circle">
@@ -12,6 +13,7 @@
                         <span th:if="${#authentication.principal instanceof T(org.springframework.security.core.userdetails.User)}" class="hide-menu" th:text="${#authentication.principal.username}"></span>
                     </a>
                     <ul aria-expanded="false" class="collapse">
+                        <li><a th:href="${home + 'database/reset'}" >Database Reset</a></li>
                         <li><a th:href="${home + 'employee/profile'}"><i class="ti-user"></i> My Profile</a></li>
                         <li><a th:href="${home + 'employee/gmail/emails'}"><i class="ti-email"></i> Inbox</a></li>
                         <li>
@@ -35,6 +37,7 @@
                         <li><a th:href="${home + 'employee/settings/google-services'}">Google setting</a></li>
                         <li>
                             <a href="javascript:void(0)" class="has-arrow">Notification setting</a>
+                           
                             <ul class="collapse">
                                 <li><a th:href="${home + 'employee/settings/email/contract'}">Contract settings</a></li>
                                 <li><a th:href="${home + 'employee/settings/email/lead'}">Lead Settings</a></li>

@@ -1,4 +1,4 @@
-### Bug lors du partage d'un fichier docs
+### 1. Bug lors du partage d'un fichier docs rehefa atao full control
 
 ```html
 <!DOCTYPE html>
@@ -46,3 +46,23 @@
 </body>
 </html>
 ```
+
+### 2. bug lors de la creation d'un new lead 
+    => Erreur 404
+    Tsy misy erreur any @ terminal fa tonga de erreur 404 no ao @ navigateur
+
+### 3. Tsy tafiditra mijery ny leads any ny clients 
+    ito no lien => http://localhost:8080/customer/my-leads
+    erreur 
+
+    Caused by: org.attoparser.ParseException: Could not parse as expression: "${home + 'customer/lead/' + ${lead.leadId}" (template: "customer-info/my-leads" - line 99, col 48)
+        at org.attoparser.MarkupParser.parseDocument(MarkupParser.java:393) ~[attoparser-2.0.6.RELEASE.jar:2.0.6.RELEASE]
+        at org.attoparser.MarkupParser.parse(MarkupParser.java:257) ~[attoparser-2.0.6.RELEASE.jar:2.0.6.RELEASE]
+        at org.thymeleaf.templateparser.markup.AbstractMarkupTemplateParser.parse(AbstractMarkupTemplateParser.java:230) ~[thymeleaf-3.1.1.RELEASE.jar:3.1.1.RELEASE]
+        ... 95 common frames omitted
+    Caused by: org.thymeleaf.exceptions.TemplateProcessingException: Could not parse as expression: "${home + 'customer/lead/' + ${lead.leadId}" (template: "customer-info/my-leads" - line 99, col 48)
+
+### 4. rehefa mcree lead dia tsy mety apina file 
+    2025-03-21T14:38:58.393+03:00 ERROR 4076 --- [nio-8080-exec-7] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.DataIntegrityViolationException: could not execute statement [Data truncation: Data too long for column 'file_data' at row 1] [insert into file (contract_id,file_data,file_name,file_type,lead_id) values (?,?,?,?,?)]; SQL [insert into file (contract_id,file_data,file_name,file_type,lead_id) values (?,?,?,?,?)]] with root cause
+
+    com.mysql.cj.jdbc.exceptions.MysqlDataTruncation: Data truncation: Data too long for column 'file_data' at row 1
