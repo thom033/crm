@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Import Tickets</title>
+    <title>Confirm Import</title>
     <div th:insert="~{/general/head.html}"></div>
     <meta name="_csrf" content="${_csrf.token}"/>
     <meta name="_csrf_header" content="${_csrf.headerName}"/>
@@ -39,13 +39,16 @@
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-body">
-                                <h1>Import Tickets</h1>
-                                <form action="/employee/csv/import-tickets" method="post" enctype="multipart/form-data" th:action="@{/employee/csv/import-tickets}" th:object="${csrf}">
-                                    <input type="file" name="file" accept=".csv" required>
-                                    <input type="hidden" th:name="filePath" th:value="${filePath}">
+                                <h1>Confirm Import...</h1>
+                                <ul>
+                                    <li th:each="error : ${errors}" th:text="${error}"></li>
+                                </ul>
+                                <form action="/employee/csv/confirm-import" method="post">
                                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                    <button type="submit">Import</button>
+                                    <input type="hidden" name="filePath" th:value="${filePath}"/>
+                                    <button type="submit">Confirm</button>
                                 </form>
+                                <a href="/employee/csv/import-tickets">Cancel</a>
                             </div>
                         </div>
                     </div>
