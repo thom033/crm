@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Import Tickets</title>
+</head>
+<body>
+    <h1>Import Tickets</h1>
+    <form action="/employee/csv/import-tickets" method="post" enctype="multipart/form-data" th:action="@{/employee/csv/import-tickets}" th:object="${csrf}">
+        <input type="file" name="file" accept=".csv" required>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit">Import</button>
+    </form>
+</body>
+</html>
