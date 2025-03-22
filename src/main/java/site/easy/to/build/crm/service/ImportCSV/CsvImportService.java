@@ -5,8 +5,6 @@ import com.opencsv.exceptions.CsvException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import site.easy.to.build.crm.entity.Ticket;
-import site.easy.to.build.crm.entity.User;
-import site.easy.to.build.crm.entity.Customer;
 import site.easy.to.build.crm.repository.TicketRepository;
 import site.easy.to.build.crm.service.customer.CustomerService;
 import site.easy.to.build.crm.service.user.UserService;
@@ -14,6 +12,7 @@ import site.easy.to.build.crm.service.user.UserService;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,11 +28,38 @@ public class CsvImportService {
     @Autowired
     private CustomerService customerService;
 
-    public void importTicketsFromCsv(String filePath) throws IOException, CsvException {
+    public List<String> validateTicketsFromCsv(String filePath) throws IOException, CsvException {
+        List<String> errors = new ArrayList<>();
         try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
             List<String[]> records = reader.readAll();
-            List<Ticket> tickets = new ArrayList<>();
+            boolean isFirstLine = true;
 
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (record.length != 8) {
+                    errors.add("Invalid record length: " + String.join(",", record));
+                    continue;
+                }
+                try {
+                    Integer.parseInt(record[4]);
+                    Integer.parseInt(record[5]);
+                    Integer.parseInt(record[6]);
+                    LocalDateTime.parse(record[7]);
+                } catch (NumberFormatException | DateTimeParseException e) {
+                    errors.add("Invalid data format: " + String.join(",", record));
+                }
+            }
+        }
+        return errors;
+    }
+
+    public List<Ticket> parseTicketsFromCsv(String filePath) throws IOException, CsvException {
+        List<Ticket> tickets = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
             boolean isFirstLine = true;
 
             for (String[] record : records) {
@@ -54,8 +80,11 @@ public class CsvImportService {
                     tickets.add(ticket);
                 }
             }
-
-            ticketRepository.saveAll(tickets);
         }
+        return tickets;
+    }
+
+    public void saveTickets(List<Ticket> tickets) {
+        ticketRepository.saveAll(tickets);
     }
 }
