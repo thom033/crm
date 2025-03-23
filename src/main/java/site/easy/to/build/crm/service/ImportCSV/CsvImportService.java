@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import site.easy.to.build.crm.entity.Contract;
 import site.easy.to.build.crm.entity.Customer;
+import site.easy.to.build.crm.entity.CustomerLoginInfo;
 import site.easy.to.build.crm.entity.Lead;
 import site.easy.to.build.crm.entity.Ticket;
 import site.easy.to.build.crm.entity.User;
@@ -14,6 +15,7 @@ import site.easy.to.build.crm.repository.ContractRepository;
 import site.easy.to.build.crm.repository.CustomerRepository;
 import site.easy.to.build.crm.repository.LeadRepository;
 import site.easy.to.build.crm.repository.TicketRepository;
+import site.easy.to.build.crm.service.customer.CustomerLoginInfoService;
 import site.easy.to.build.crm.service.customer.CustomerService;
 import site.easy.to.build.crm.service.user.UserService;
 
@@ -39,6 +41,9 @@ public class CsvImportService {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+    @Autowired
+    private CustomerLoginInfoService customerLoginInfoService;
 
     @Autowired
     private LeadRepository leadRepository;
@@ -120,33 +125,19 @@ public class CsvImportService {
                     isFirstLine = false;
                     continue;
                 }
-                if (record.length != 13) {
+                if (record.length != 15) {
                     errors.add("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
                     continue;
                 }
-                // Add more validation logic as needed
                 try {
-                    // try {
-                    //     Integer.parseInt(record[11]);
-                    // } catch (NumberFormatException e) {
-                    //     errors.add("Invalid customer ID format at line " + (records.indexOf(record) + 1) + ": " + record[11]);
-                    //     continue;
-                    // }
                     try {
-                        LocalDateTime.parse(record[15]);
+                        LocalDateTime.parse(record[12]);
                     } catch (DateTimeParseException e) {
-                        errors.add("Invalid date format at line " + (records.indexOf(record) + 1) + ": " + record[15] + ". Expected format: yyyy-MM-ddTHH:mm:ss");
+                        errors.add("Invalid date format at line " + (records.indexOf(record) + 1) + ": " + record[12] + ". Expected format: yyyy-MM-ddTHH:mm:ss");
                         continue;
                     }
-
-                    // Customer customer = customerService.findByCustomerId(Integer.parseInt(record[11]));
-
-                    // if (customer != null) {
-                    //     errors.add("Customer already exists at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " customer id => " + record[11]);
-                    // }
-
                 } catch (Exception e) {
-                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " erreur => " + e.getMessage());
                 }
             }
         }
@@ -325,22 +316,30 @@ public class CsvImportService {
                     isFirstLine = false;
                     continue;
                 }
-                if (record.length == 13) {
+                if (record.length == 15) {
                     try {
                         Customer customer = new Customer();
                         customer.setName(record[0]);
-                        customer.setEmail(record[1]);
-                        customer.setPosition(record[2]);
-                        customer.setPhone(record[3]);
-                        customer.setAddress(record[4]);
-                        customer.setCity(record[5]);
-                        customer.setState(record[6]);
-                        customer.setCountry(record[7]);
-                        customer.setDescription(record[8]);
+                        customer.setPhone(record[1]);
+                        customer.setAddress(record[2]);
+                        customer.setCity(record[3]);
+                        customer.setState(record[4]);
+                        customer.setCountry(record[5]);
+
+                        User user = userService.findById(Integer.parseInt(record[6]));
+                        customer.setUser(user);
+
+                        customer.setDescription(record[7]);
+                        customer.setPosition(record[8]);
                         customer.setTwitter(record[9]);
                         customer.setFacebook(record[10]);
                         customer.setYoutube(record[11]);
-                        customer.setCreatedAt(LocalDateTime.now());
+                        customer.setCreatedAt(LocalDateTime.parse(record[12]));
+                        customer.setEmail(record[13]);
+
+                        CustomerLoginInfo customerLoginInfo = customerLoginInfoService.findById(Integer.parseInt(record[14]));
+                        customer.setCustomerLoginInfo(customerLoginInfo);
+                        
                         customers.add(customer);
                     } catch (Exception e) {
                         System.err.println("Error parsing record at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
