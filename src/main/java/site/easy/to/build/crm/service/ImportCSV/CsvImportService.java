@@ -5,15 +5,21 @@ import com.opencsv.exceptions.CsvException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import site.easy.to.build.crm.entity.Contract;
 import site.easy.to.build.crm.entity.Customer;
+import site.easy.to.build.crm.entity.Lead;
 import site.easy.to.build.crm.entity.Ticket;
 import site.easy.to.build.crm.entity.User;
+import site.easy.to.build.crm.repository.ContractRepository;
+import site.easy.to.build.crm.repository.CustomerRepository;
+import site.easy.to.build.crm.repository.LeadRepository;
 import site.easy.to.build.crm.repository.TicketRepository;
 import site.easy.to.build.crm.service.customer.CustomerService;
 import site.easy.to.build.crm.service.user.UserService;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -30,6 +36,15 @@ public class CsvImportService {
 
     @Autowired
     private CustomerService customerService;
+
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
+    private LeadRepository leadRepository;
+
+    @Autowired
+    private ContractRepository contractRepository;
 
     public List<String> validateTicketsFromCsv(String filePath) throws IOException, CsvException {
         List<String> errors = new ArrayList<>();
@@ -94,6 +109,179 @@ public class CsvImportService {
         return errors;
     }
 
+    public List<String> validateCustomersFromCsv(String filePath) throws IOException, CsvException {
+        List<String> errors = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+            boolean isFirstLine = true;
+
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (record.length != 13) {
+                    errors.add("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    continue;
+                }
+                // Add more validation logic as needed
+                try {
+                    // try {
+                    //     Integer.parseInt(record[11]);
+                    // } catch (NumberFormatException e) {
+                    //     errors.add("Invalid customer ID format at line " + (records.indexOf(record) + 1) + ": " + record[11]);
+                    //     continue;
+                    // }
+                    try {
+                        LocalDateTime.parse(record[15]);
+                    } catch (DateTimeParseException e) {
+                        errors.add("Invalid date format at line " + (records.indexOf(record) + 1) + ": " + record[15] + ". Expected format: yyyy-MM-ddTHH:mm:ss");
+                        continue;
+                    }
+
+                    // Customer customer = customerService.findByCustomerId(Integer.parseInt(record[11]));
+
+                    // if (customer != null) {
+                    //     errors.add("Customer already exists at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " customer id => " + record[11]);
+                    // }
+
+                } catch (Exception e) {
+                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                }
+            }
+        }
+        return errors;
+    }
+
+    public List<String> validateLeadsFromCsv(String filePath) throws IOException, CsvException {
+        List<String> errors = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+            boolean isFirstLine = true;
+
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (record.length != 11) {
+                    errors.add("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    continue;
+                }
+                // Add more validation logic as needed
+                try {
+                    try {
+                        Integer.parseInt(record[8]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid lead ID format at line " + (records.indexOf(record) + 1) + ": " + record[8]);
+                        continue;
+                    }
+                    try {
+                        Integer.parseInt(record[9]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid user ID format at line " + (records.indexOf(record) + 1) + ": " + record[9]);
+                        continue;
+                    }
+                    try {
+                        Integer.parseInt(record[10]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid customer ID format at line " + (records.indexOf(record) + 1) + ": " + record[10]);
+                        continue;
+                    }
+                    try {
+                        LocalDateTime.parse(record[11]);
+                    } catch (DateTimeParseException e) {
+                        errors.add("Invalid date format at line " + (records.indexOf(record) + 1) + ": " + record[11] + ". Expected format: yyyy-MM-ddTHH:mm:ss");
+                        continue;
+                    }
+
+                    Lead lead = leadRepository.findById(Integer.parseInt(record[8])).orElse(null);
+                    User user = userService.findById(Integer.parseInt(record[9]));
+                    Customer customer = customerService.findByCustomerId(Integer.parseInt(record[10]));
+
+                    if (lead == null) {
+                        errors.add("Lead not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " lead id => " + record[8]);
+                    }
+                    if (user == null) {
+                        errors.add("User not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " user id => " + record[9]);
+                    }
+                    if (customer == null) {
+                        errors.add("Customer not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " customer id => " + record[10]);
+                    }
+
+                } catch (Exception e) {
+                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                }
+            }
+        }
+        return errors;
+    }
+
+    public List<String> validateContractsFromCsv(String filePath) throws IOException, CsvException {
+        List<String> errors = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+            boolean isFirstLine = true;
+
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (record.length != 12) {
+                    errors.add("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    continue;
+                }
+                // Add more validation logic as needed
+                try {
+                    try {
+                        Integer.parseInt(record[8]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid lead ID format at line " + (records.indexOf(record) + 1) + ": " + record[8]);
+                        continue;
+                    }
+                    try {
+                        Integer.parseInt(record[9]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid user ID format at line " + (records.indexOf(record) + 1) + ": " + record[9]);
+                        continue;
+                    }
+                    try {
+                        Integer.parseInt(record[10]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid customer ID format at line " + (records.indexOf(record) + 1) + ": " + record[10]);
+                        continue;
+                    }
+                    try {
+                        LocalDateTime.parse(record[11]);
+                    } catch (DateTimeParseException e) {
+                        errors.add("Invalid date format at line " + (records.indexOf(record) + 1) + ": " + record[11] + ". Expected format: yyyy-MM-ddTHH:mm:ss");
+                        continue;
+                    }
+
+                    Lead lead = leadRepository.findById(Integer.parseInt(record[8])).orElse(null);
+                    User user = userService.findById(Integer.parseInt(record[9]));
+                    Customer customer = customerService.findByCustomerId(Integer.parseInt(record[10]));
+
+                    if (lead == null) {
+                        errors.add("Lead not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " lead id => " + record[8]);
+                    }
+                    if (user == null) {
+                        errors.add("User not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " user id => " + record[9]);
+                    }
+                    if (customer == null) {
+                        errors.add("Customer not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " customer id => " + record[10]);
+                    }
+
+                } catch (Exception e) {
+                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                }
+                
+            }
+        }
+        return errors;
+    }
+
     public List<Ticket> parseTicketsFromCsv(String filePath) throws IOException, CsvException {
         List<Ticket> tickets = new ArrayList<>();
         try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
@@ -126,7 +314,131 @@ public class CsvImportService {
         return tickets;
     }
 
+    public List<Customer> parseCustomersFromCsv(String filePath) throws IOException, CsvException {
+        List<Customer> customers = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+            boolean isFirstLine = true;
+
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (record.length == 13) {
+                    try {
+                        Customer customer = new Customer();
+                        customer.setName(record[0]);
+                        customer.setEmail(record[1]);
+                        customer.setPosition(record[2]);
+                        customer.setPhone(record[3]);
+                        customer.setAddress(record[4]);
+                        customer.setCity(record[5]);
+                        customer.setState(record[6]);
+                        customer.setCountry(record[7]);
+                        customer.setDescription(record[8]);
+                        customer.setTwitter(record[9]);
+                        customer.setFacebook(record[10]);
+                        customer.setYoutube(record[11]);
+                        customer.setCreatedAt(LocalDateTime.now());
+                        customers.add(customer);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing record at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    }
+                }
+            }
+        }
+        return customers;
+    }
+
+    public List<Lead> parseLeadsFromCsv(String filePath) throws IOException, CsvException {
+        List<Lead> leads = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+            boolean isFirstLine = true;
+
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (record.length == 11) {
+                    try {
+                        Lead lead = new Lead();
+                        lead.setName(record[0]);
+                        lead.setStatus(record[1]);
+                        lead.setPhone(record[2]);
+                        lead.setMeetingId(record[3]);
+                        lead.setGoogleDrive(Boolean.parseBoolean(record[4]));
+                        lead.setGoogleDriveFolderId(record[5]);
+                        lead.setManager(userService.findById(Integer.parseInt(record[6])));
+                        lead.setEmployee(userService.findById(Integer.parseInt(record[7])));
+                        lead.setCustomer(customerService.findByCustomerId(Integer.parseInt(record[8])));
+                        lead.setCreatedAt(LocalDateTime.parse(record[9]));
+                        leads.add(lead);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing record at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    }
+                }
+            }
+        }
+        return leads;
+    }
+
+    public List<Contract> parseContractsFromCsv(String filePath) throws IOException, CsvException {
+        List<Contract> contracts = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+            boolean isFirstLine = true;
+
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                System.out.println("Parsing record: " + String.join(",", record)); // Add this line to log the record
+                System.out.println("Record length: " + record.length); // Add this line to log the record length
+                if (record.length == 12) {
+                    try {
+                        Contract contract = new Contract();
+                        contract.setSubject(record[0]);
+                        contract.setStatus(record[1]);
+                        contract.setDescription(record[2]);
+                        contract.setStartDate(record[3]);
+                        contract.setEndDate(record[4]);
+                        contract.setAmount(new BigDecimal(record[5]));
+                        contract.setGoogleDrive(Boolean.parseBoolean(record[6]));
+                        contract.setGoogleDriveFolderId(record[7]);
+                        contract.setLead(leadRepository.findById(Integer.parseInt(record[8])).orElse(null));
+                        contract.setUser(userService.findById(Integer.parseInt(record[9])));
+                        contract.setCustomer(customerService.findByCustomerId(Integer.parseInt(record[10])));
+                        contract.setCreatedAt(LocalDateTime.parse(record[11]));
+                        contracts.add(contract);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing record at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    }
+                } else {
+                    System.err.println("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                }
+            }
+        }
+        return contracts;
+    }
+
     public void saveTickets(List<Ticket> tickets) {
         ticketRepository.saveAll(tickets);
+    }
+
+    public void saveCustomers(List<Customer> customers) {
+        customerRepository.saveAll(customers);
+    }
+
+    public void saveLeads(List<Lead> leads) {
+        leadRepository.saveAll(leads);
+    }
+
+    public void saveContracts(List<Contract> contracts) {
+        System.out.println("Saving contracts: " + contracts); // Add this line to log the contracts
+        contractRepository.saveAll(contracts);
     }
 }
