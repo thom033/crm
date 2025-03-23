@@ -4,7 +4,10 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import site.easy.to.build.crm.entity.Customer;
 import site.easy.to.build.crm.entity.Ticket;
+import site.easy.to.build.crm.entity.User;
 import site.easy.to.build.crm.repository.TicketRepository;
 import site.easy.to.build.crm.service.customer.CustomerService;
 import site.easy.to.build.crm.service.user.UserService;
@@ -40,16 +43,51 @@ public class CsvImportService {
                     continue;
                 }
                 if (record.length != 8) {
-                    errors.add("Invalid record length: " + String.join(",", record));
+                    errors.add("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
                     continue;
                 }
                 try {
-                    Integer.parseInt(record[4]);
-                    Integer.parseInt(record[5]);
-                    Integer.parseInt(record[6]);
-                    LocalDateTime.parse(record[7]);
-                } catch (NumberFormatException | DateTimeParseException e) {
-                    errors.add("Invalid data format: " + String.join(",", record));
+                    try {
+                        Integer.parseInt(record[4]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid manager ID format at line " + (records.indexOf(record) + 1) + ": " + record[4]);
+                        continue;
+                    }
+                    try {
+                        Integer.parseInt(record[5]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid employee ID format at line " + (records.indexOf(record) + 1) + ": " + record[5]);
+                        continue;
+                    }
+                    try {
+                        Integer.parseInt(record[6]);
+                    } catch (NumberFormatException e) {
+                        errors.add("Invalid customer ID format at line " + (records.indexOf(record) + 1) + ": " + record[6]);
+                        continue;
+                    }
+                    try {
+                        LocalDateTime.parse(record[7]);
+                    } catch (DateTimeParseException e) {
+                        errors.add("Invalid date format at line " + (records.indexOf(record) + 1) + ": " + record[7] + ". Expected format: yyyy-MM-ddTHH:mm:ss");
+                        continue;
+                    }
+
+                    User manager = userService.findById(Integer.parseInt(record[4]));
+                    User employee = userService.findById(Integer.parseInt(record[5]));
+                    Customer customer = customerService.findByCustomerId(Integer.parseInt(record[6]));
+
+                    if (manager == null) {
+                        errors.add("Manager not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " manager id => " + record[4]);
+                    }
+                    if (employee == null) {
+                        errors.add("Employee not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " employee id => " + record[5]);
+                    }
+                    if (customer == null) {
+                        errors.add("Customer not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " customer id => " + record[6]);
+                    }
+
+                } catch (Exception e) {
+                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
                 }
             }
         }
@@ -68,16 +106,20 @@ public class CsvImportService {
                     continue;
                 }
                 if (record.length == 8) {
-                    Ticket ticket = new Ticket();
-                    ticket.setSubject(record[0]);
-                    ticket.setDescription(record[1]);
-                    ticket.setStatus(record[2]);
-                    ticket.setPriority(record[3]);
-                    ticket.setManager(userService.findById(Integer.parseInt(record[4])));
-                    ticket.setEmployee(userService.findById(Integer.parseInt(record[5])));
-                    ticket.setCustomer(customerService.findByCustomerId(Integer.parseInt(record[6])));
-                    ticket.setCreatedAt(LocalDateTime.parse(record[7]));
-                    tickets.add(ticket);
+                    try {
+                        Ticket ticket = new Ticket();
+                        ticket.setSubject(record[0]);
+                        ticket.setDescription(record[1]);
+                        ticket.setStatus(record[2]);
+                        ticket.setPriority(record[3]);
+                        ticket.setManager(userService.findById(Integer.parseInt(record[4])));
+                        ticket.setEmployee(userService.findById(Integer.parseInt(record[5])));
+                        ticket.setCustomer(customerService.findByCustomerId(Integer.parseInt(record[6])));
+                        ticket.setCreatedAt(LocalDateTime.parse(record[7]));
+                        tickets.add(ticket);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing record at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    }
                 }
             }
         }
