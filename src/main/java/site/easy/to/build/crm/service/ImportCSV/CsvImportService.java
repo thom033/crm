@@ -326,7 +326,8 @@ public class CsvImportService {
                         customer.setState(record[4]);
                         customer.setCountry(record[5]);
 
-                        User user = userService.findById(Integer.parseInt(record[6]));
+                        // User user = userService.findById(Integer.parseInt(record[6]));
+                        User user = userService.findById(55);
                         customer.setUser(user);
 
                         customer.setDescription(record[7]);
@@ -337,7 +338,11 @@ public class CsvImportService {
                         customer.setCreatedAt(LocalDateTime.parse(record[12]));
                         customer.setEmail(record[13]);
 
-                        CustomerLoginInfo customerLoginInfo = customerLoginInfoService.findById(Integer.parseInt(record[14]));
+                        CustomerLoginInfo customerLoginInfo = new CustomerLoginInfo();
+                        customerLoginInfo.setEmail(record[13]);
+                        customerLoginInfo.setPassword("defaultPassword");
+                        customerLoginInfo.setPasswordSet(false);
+                        
                         customer.setCustomerLoginInfo(customerLoginInfo);
                         
                         customers.add(customer);
