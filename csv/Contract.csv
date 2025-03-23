@@ -1,0 +1,3 @@
+subject,status,description,start_date,end_date,amount,google_drive,google_drive_folder_id,lead_id,user_id,customer_id,created_at
+"Contract 1","active","Description 1","2025-04-01","2025-04-30","1000.00",true,"folder1",1,55,44,"2025-03-21T10:00:00"
+"Contract 2","expired","Description 2","2025-05-01","2025-05-31","2000.00",false,"folder2",2,56,45,"2025-03-22T11:00:00"
