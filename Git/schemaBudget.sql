@@ -1,40 +1,42 @@
-
 ---------------- budget ----------------------
-CREATE TABLE IF NOT EXISTS customer_budget (
-  budget_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  budget_name VARCHAR(255) NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
-  start_date DATE NOT NULL,
-  end_date DATE NOT NULL,
-  customer_id INT UNSIGNED NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (budget_id),
-  KEY customer_id (customer_id),
-  CONSTRAINT customer_budget_ibfk_1 FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
+CREATE TABLE IF NOT EXISTS `customer_budget` (
+  `budget_id` int NOT NULL AUTO_INCREMENT,
+  `customer_id` int unsigned NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `created_at` date NOT NULL,
+  `user_id` int NOT NULL,
+  PRIMARY KEY (`budget_id`),
+  KEY `customer_id` (`customer_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `budget_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),
+  CONSTRAINT `budget_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS customer_expenses (
-  expense_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  expense_name VARCHAR(255) NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
-  price DECIMAL(10,2) NOT NULL, 
-  date_expense DATE NOT NULL,
-  ticket_id INT UNSIGNED DEFAULT NULL,
-  lead_id INT UNSIGNED DEFAULT NULL,
-  customer_id INT UNSIGNED NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (expense_id), 
-  KEY ticket_id (ticket_id),
-  KEY lead_id (lead_id),
-  KEY customer_id (customer_id),
-  CONSTRAINT customer_expenses_ibfk_1 FOREIGN KEY (ticket_id) REFERENCES trigger_ticket (ticket_id),
-  CONSTRAINT customer_expenses_ibfk_2 FOREIGN KEY (lead_id) REFERENCES trigger_lead (lead_id),
-  CONSTRAINT customer_expenses_ibfk_4 FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
+---------------- depenses ----------------------
+CREATE TABLE IF NOT EXISTS `customer_expenses` (
+  `expense_id` int NOT NULL AUTO_INCREMENT,
+  `lead_id` int unsigned DEFAULT NULL,
+  `ticket_id` int unsigned DEFAULT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `create_at` datetime DEFAULT NULL,
+  `update_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `user_id` int DEFAULT NULL,
+  PRIMARY KEY (`expense_id`),
+  KEY `lead_id` (`lead_id`),
+  KEY `ticket_id` (`ticket_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `depense_ibfk_1` FOREIGN KEY (`lead_id`) REFERENCES `trigger_lead` (`lead_id`),
+  CONSTRAINT `depense_ibfk_2` FOREIGN KEY (`ticket_id`) REFERENCES `trigger_ticket` (`ticket_id`),
+  CONSTRAINT `depense_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS alert_rate (
-  rate_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  alert_percentage DECIMAL(5,2) NOT NULL DEFAULT 5.00,  -- Default to 5%
-  date_rate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (rate_id)
+---------------- alerte ----------------------
+CREATE TABLE IF NOT EXISTS `alert_rate` (
+  `rate_id` int NOT NULL AUTO_INCREMENT,
+  `alert_percentage` decimal(5,2) NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `user_id` int NOT NULL,
+  PRIMARY KEY (`rate_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `alert_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
