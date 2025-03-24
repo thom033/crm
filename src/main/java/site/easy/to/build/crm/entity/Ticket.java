@@ -3,7 +3,6 @@ package site.easy.to.build.crm.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import org.hibernate.mapping.ToOne;
 
 import java.time.LocalDateTime;
 
