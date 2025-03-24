@@ -71,15 +71,24 @@
                     <div class="card">
                         <div class="card-body">
                             <h4 class="card-title">Create New Expense</h4>
-                            <!-- <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
+
+                            <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert" style="background-color: #d4edda; color: #155724; border-color: #c3e6cb;">
                                 ✅ Dépense insérée avec succès !
                                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
-                                
-                            </div> -->
+                            </div>
                             
-                            <form th:object="${expense}" th:action="@{/employee/expense/create-expense}" method="post">
+                            <form th:object="${expense}" th:action="@{/employee/expense/create-expense}" method="post" id="expenseForm">
+                                <input type="hidden" id="confirmOverBudget" name="confirmOverBudget" value="false">
+                                <input type="hidden" id="overBudget" name="overBudget" th:value="${overBudget}">
+
+                                <label class="m-t-20" for="customerId">Customer:</label>
+                                <div class="input-group">
+                                    <select name="customerId" id="customerId" class="form-control" onchange="loadBudgets(this.value)">
+                                        <option th:each="customer : ${customers}" th:text="${customer.name}" th:value="${customer.customerId}"></option>
+                                    </select>
+                                </div>
 
                                 <label class="m-t-20" for="type">Type:</label>
                                 <div class="input-group">
@@ -88,13 +97,6 @@
                                         <option value="1">Ticket</option>
                                     </select>
                                 </div>
-
-                                <!-- <label class="m-t-20" for="customerId">Customer:</label>
-                                <div class="input-group">
-                                    <select name="customerId" id="customerId" class="form-control">
-                                        <option th:each="customer : ${customers}" th:text="${customer.name}" th:value="${customer.customerId}"></option>
-                                    </select>
-                                </div> -->
 
                                 <label class="m-t-20" for="leadId">Lead:</label>
                                 <div class="input-group">
@@ -107,6 +109,13 @@
                                 <div class="input-group">
                                     <select name="ticketId" id="ticketId" class="form-control">
                                         <option th:each="ticket : ${tickets}" th:text="${ticket.subject}" th:value="${ticket.ticketId}"></option>
+                                    </select>
+                                </div>
+
+                                <label class="m-t-20" for="budgetId">Budget:</label>
+                                <div class="input-group">
+                                    <select name="budgetId" id="budgetId" class="form-control">
+                                        <option th:each="budget : ${budgets}" th:text="${budget.budgetName}" th:value="${budget.budgetId}"></option>
                                     </select>
                                 </div>
 
@@ -232,6 +241,40 @@
     $(document).ready(function() {
         $('.textarea_editor').wysihtml5();
     });
+
+    function loadBudgets(customerId) {
+        fetch(`/employee/expense/budgets?customerId=${customerId}`)
+            .then(response => response.json())
+            .then(data => {
+                const budgetSelect = document.getElementById('budgetId');
+                budgetSelect.innerHTML = '';
+                data.forEach(budget => {
+                    const option = document.createElement('option');
+                    option.value = budget.budgetId;
+                    option.text = budget.budgetName;
+                    budgetSelect.appendChild(option);
+                });
+            });
+    }
+
+    function checkOverBudget() {
+        const overBudget = document.getElementById('overBudget').value === 'true';
+        if (overBudget) {
+            const newTotal = /*[[${newTotal}]]*/ 0;
+            const budgetAmount = /*[[${budgetAmount}]]*/ 0;
+            if (confirm(`The new total exceeds the budget amount. Do you want to proceed?`)) {
+                document.getElementById('confirmOverBudget').value = "true";
+                document.getElementById('expenseForm').submit();
+            }
+        } else {
+            document.getElementById('expenseForm').submit();
+        }
+    }
+
+    document.getElementById('expenseForm').onsubmit = function(event) {
+        event.preventDefault();
+        checkOverBudget();
+    };
 </script>
 
 </body>

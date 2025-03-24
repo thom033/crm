@@ -41,17 +41,19 @@
                                 <li><a th:href="${home + 'employee/settings/email/ticket'}">Ticket Settings</a></li>
                             </ul>
                         </li>
-                            <li>
-                                <a th:href="${home + 'database/settings/reset-database'}">Reset Database</a>
-                            </li>
                         <li th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}">
-                            <a th:href="${home + 'employee/csv/import'}" class="text-primary">
-                                <i class="fas fa-file-csv"></i> Import CSV Data
+                            <a th:href="${home + 'database/settings/reset-database'}" class="text-danger">
+                                Reset Database
                             </a>
                         </li>
                         <li th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}">
-                            <a th:href="${home + 'employee/csv/import'}" class="text-primary">
-                                <i class="fas fa-file-csv"></i> Generate Data
+                            <a th:href="${home + 'employee/csv/importCsv'}" class="text-primary">
+                                CSV importer
+                            </a>
+                        </li>
+                        <li th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}">
+                            <a th:href="${home + 'employee/generate-data'}" class="text-primary">
+                                Generator
                             </a>
                         </li>
                     </ul>
@@ -127,21 +129,39 @@
                         <li><a th:href="${home + 'employee/ticket/create-ticket'}">Create ticket</a></li>
                     </ul>
                 </li>
-                  <!--Budget--> 
-                  <li class="nav-small-cap">--- Budget--</li>
-                  <li>
-                      <a class="has-arrow waves-effect waves-dark" href="javascript:void(0)">
-                          <i class="fas fa-ticket-alt"></i>
-                          <span class="hide-menu">Budget</span>
-                      </a>
-                      <ul class="collapse">
-                          <li><a th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}" th:href="${home + 'employee/budget/manager/all-budgets'}">All budgets</a></li>
-                          <!--<li><a th:href="${home + 'employee/ticket/assigned-tickets'}">Assigned tickets</a></li> -->
-                          <li><a th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}" th:href="${home + 'employee/budget/created-budgets'}">Created budget</a></li>
-                          <li><a th:href="${home + 'employee/budget/create-budget'}">Create budget</a></li>
-                      </ul>
-                  </li>
-                  <!--Fin Budget-->
+                
+                    <!--Budget--> 
+                    <li class="nav-small-cap">--- Budget--</li>
+                    <li>
+                        <a class="has-arrow waves-effect waves-dark" href="javascript:void(0)">
+                            <i class="fas fa-ticket-alt"></i>
+                            <span class="hide-menu">Budget</span>
+                        </a>
+                        <ul class="collapse">
+                            <li><a th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}" th:href="${home + 'employee/budget/manager/all-budgets'}">All budgets</a></li>
+                            <!--<li><a th:href="${home + 'employee/ticket/assigned-tickets'}">Assigned tickets</a></li> -->
+                            <li><a th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}" th:href="${home + 'employee/budget/created-budgets'}">Created budget</a></li>
+                            <li><a th:href="${home + 'employee/budget/create-budget'}">Create budget</a></li>
+                        </ul>
+                    </li>
+                    <!--Fin Budget-->
+
+                     <!--Expense--> 
+                     <li class="nav-small-cap">--- Expense--</li>
+                     <li>
+                         <a class="has-arrow waves-effect waves-dark" href="javascript:void(0)">
+                             <i class="fas fa-ticket-alt"></i>
+                             <span class="hide-menu">Expense</span>
+                         </a>
+                         <ul class="collapse">
+                             <li><a th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}" th:href="${home + 'employee/expense/manager/all-expenses'}">All Expenses</a></li>
+                             <!--<li><a th:href="${home + 'employee/ticket/assigned-tickets'}">Assigned tickets</a></li> -->
+                             <li><a th:if="${#authorization.expression('hasRole(''ROLE_MANAGER'')')}" th:href="${home + 'employee/expense/created-expenses'}">Created Expense</a></li>
+                             <li><a th:href="${home + 'employee/expense/create-expense'}">Create Expense</a></li>
+                         </ul>
+                     </li>
+                     <!--Fin Expense-->
+
                 <li class="nav-small-cap">--- Leads</li>
                 <li>
                     <a class="has-arrow waves-effect waves-dark" href="javascript:void(0)">
