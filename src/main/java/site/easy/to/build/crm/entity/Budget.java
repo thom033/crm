@@ -31,18 +31,13 @@ public class Budget {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @NotNull(message = "User ID is required")
-    @Column(name = "user_id", nullable = false)
-    private int userId;
-
     public Budget() {
     }
 
-    public Budget(Customer customer, BigDecimal amount, LocalDateTime createdAt, int userId) {
+    public Budget(Customer customer, BigDecimal amount, LocalDateTime createdAt) {
         this.amount = amount;
         this.customer = customer;
         this.createdAt = createdAt;
-        this.userId = userId;
     }
 
     public int getBudgetId() {
@@ -75,13 +70,5 @@ public class Budget {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
     }
 }

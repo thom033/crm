@@ -79,6 +79,6 @@ public class BudgetController {
         budget.setCreatedAt(LocalDateTime.now());
 
         budgetService.save(budget);
-        return "budget/create-budget";
+        return "redirect:/employee/budget/create-budget";
     }
 }

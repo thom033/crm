@@ -78,16 +78,7 @@
                                         <option th:each="customer : ${customers}" th:text="${customer.name}" th:value="${customer.customerId}"></option>
                                     </select>
                                 </div>
-                                <label class="m-t-20" for="budgetName">Nom:</label>
-                                <div class="input-group">
-                                    <input type="text" id="budgetName" th:field="*{budgetName}" class="form-control">
-                                </div>
-                                <div class="input-group">
-                                    <span class="text-danger font-weight-bold" th:if="${#fields.hasErrors('budgetName')}"
-                                          th:errors="*{budgetName}"></span>
-                                </div>
-
-
+                
                                 <label class="m-t-20" for="amount">Amount:</label>
                                 <div class="input-group">
                                     <input type="text" id="amount" th:field="*{amount}" class="form-control">
@@ -96,35 +87,6 @@
                                     <span class="text-danger font-weight-bold" th:if="${#fields.hasErrors('amount')}"
                                           th:errors="*{amount}"></span>
                                 </div>
-
-                                <label class="m-t-20" for="startDate">Start Date:</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" th:field="*{startDate}"
-                                           placeholder="2017-06-04" id="startDate">
-                                </div>
-                                <div class="input-group">
-                                    <span class="text-danger font-weight-bold" th:if="${#fields.hasErrors('startDate')}"
-                                          th:errors="*{startDate}"></span>
-                                </div>
-                                <div class="input-group" th:if="${#fields.hasGlobalErrors()}">
-                                  <span class="text-danger font-weight-bold" th:each="error : ${#fields.globalErrors()}"
-                                        th:text="${error}">
-                                    <span class="text-danger font-weight-bold"
-                                          th:if="${error.contains('StartDateBeforeEndDate')}" th:text="${error}">
-                                    </span>
-                                  </span>
-                                </div>
-
-                                <label class="m-t-20" for="endDate">End Date:</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" th:field="*{endDate}"
-                                           placeholder="2017-06-04" id="endDate">
-                                </div>
-                                <div class="input-group">
-                                    <span class="text-danger font-weight-bold" th:if="${#fields.hasErrors('endDate')}"
-                                          th:errors="*{endDate}"></span>
-                                </div>
-
 
                                 <button type="submit" class="btn btn-primary m-t-20">Create budget</button>
                             </form>

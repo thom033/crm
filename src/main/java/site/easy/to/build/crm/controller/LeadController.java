@@ -323,7 +323,7 @@ public class LeadController {
                 System.out.println("seuilAlerte: " + seuilAlerte);
                 
                 // Vérifier si le seuil est dépassé
-                boolean seuilDepasse = newTotalDepenses.compareTo(seuilAlerte) > 0;
+                boolean seuilDepasse = newTotalDepenses.compareTo(seuilAlerte) >= 0;
                 System.out.println("Le seuil est-il dépassé? " + seuilDepasse);
                 
                 if (seuilDepasse) {
@@ -352,7 +352,7 @@ public class LeadController {
                     model.addAttribute("alertMessage", alertMessage);
                     model.addAttribute("employees", employees);
                     model.addAttribute("customers", customers);
-                    // model.addAttribute("ticket", ticket);
+                    model.addAttribute("lead", lead);
 
                     return "lead/create-lead";
                 }
@@ -381,6 +381,7 @@ public class LeadController {
 
         // Sauvegarder le lead d'abord pour obtenir son ID
         Lead createdLead = leadService.save(lead);
+        System.out.println("Lead sauvegarde " + createdLead);
         
         // Créer une dépense si un montant a été spécifié
         if (montant != null && montant.compareTo(BigDecimal.ZERO) > 0) {
@@ -395,13 +396,13 @@ public class LeadController {
 
         System.out.println("=== FIN DE LA MÉTHODE createLead ===");
 
-        if (lead.getStatus().equals("meeting-to-schedule")) {
-            return "redirect:/employee/calendar/create-event?leadId=" + lead.getLeadId();
-        }
-        if(AuthorizationUtil.hasRole(authentication, "ROLE_MANAGER")) {
-            return "redirect:/employee/lead/created-leads";
-        }
-        return "redirect:/employee/lead/assigned-leads";
+        // if (lead.getStatus().equals("meeting-to-schedule")) {
+        //     return "redirect:/employee/calendar/create-event?leadId=" + lead.getLeadId();
+        // }
+        // if(AuthorizationUtil.hasRole(authentication, "ROLE_MANAGER")) {
+        //     return "redirect:/employee/lead/created-leads";
+        // }
+        return "redirect:/employee/lead/create";
     }
 
     @GetMapping("/update/{id}")
