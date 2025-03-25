@@ -102,39 +102,41 @@ public class ExpenseController {
             }
             expense.setLead(null);
         }
-        if (budgetId != null) {
-            expense.setBudget(budgetService.findByBudgetId(budgetId));
-            double totalExpenses = expenseService.calculateTotalExpensesForBudget(budgetId);
-            double newTotal = totalExpenses + expense.getAmount();
-            Budget budget = budgetService.findByBudgetId(budgetId);
 
-            if (newTotal > budget.getAmount() && !confirmOverBudget) {
-                int userId = authenticationUtils.getLoggedInUserId(authentication);
-                List<Customer> customers = AuthorizationUtil.hasRole(authentication, "ROLE_MANAGER")
-                        ? customerService.findAll()
-                        : customerService.findByUserId(userId);
+        // if (budgetId != null) {
+        //     expense.setBudget(budgetService.findByBudgetId(budgetId));
+        //     double totalExpenses = expenseService.calculateTotalExpensesForBudget(budgetId);
+        //     double newTotal = totalExpenses + expense.getAmount();
+        //     Budget budget = budgetService.findByBudgetId(budgetId);
 
-                model.addAttribute("expense", expense);
-                model.addAttribute("customers", customers);
-                model.addAttribute("leads", leadService.findAll());
-                model.addAttribute("tickets", ticketService.findAll());
-                model.addAttribute("budgets", budgetService.findAll());
+        //     if (newTotal > budget.getAmount() && !confirmOverBudget) {
+        //         int userId = authenticationUtils.getLoggedInUserId(authentication);
+        //         List<Customer> customers = AuthorizationUtil.hasRole(authentication, "ROLE_MANAGER")
+        //                 ? customerService.findAll()
+        //                 : customerService.findByUserId(userId);
 
-                model.addAttribute("overBudget", true);
-                model.addAttribute("newTotal", newTotal);
-                model.addAttribute("budgetAmount", budget.getAmount());
+        //         model.addAttribute("expense", expense);
+        //         model.addAttribute("customers", customers);
+        //         model.addAttribute("leads", leadService.findAll());
+        //         model.addAttribute("tickets", ticketService.findAll());
+        //         model.addAttribute("budgets", budgetService.findAll());
 
-                // Prepare the data for the confirmation page
-                model.addAttribute("alertMessage", "Attention : Le total des dépenses dépasse le budget total pour ce budget. Voulez-vous continuer malgré ce dépassement?");
-                model.addAttribute("formData", model.asMap());
-                model.addAttribute("confirmationUrl", "/employee/expense/create-expense");
-                model.addAttribute("cancelUrl", "/employee/expense/create-expense");
-                model.addAttribute("title", "Confirmation de dépassement de budget");
-                model.addAttribute("subtitle", "Dépense pour le budget " + budget.getBudgetName());
+        //         model.addAttribute("overBudget", true);
+        //         model.addAttribute("newTotal", newTotal);
+        //         model.addAttribute("budgetAmount", budget.getAmount());
 
-                return "expense/create-expense";
-            }
-        }
+        //         // Prepare the data for the confirmation page
+        //         model.addAttribute("alertMessage", "Attention : Le total des dépenses dépasse le budget total pour ce budget. Voulez-vous continuer malgré ce dépassement?");
+        //         model.addAttribute("formData", model.asMap());
+        //         model.addAttribute("confirmationUrl", "/employee/expense/create-expense");
+        //         model.addAttribute("cancelUrl", "/employee/expense/create-expense");
+        //         model.addAttribute("title", "Confirmation de dépassement de budget");
+        //         model.addAttribute("subtitle", "Dépense pour le budget " + budget.getBudgetName());
+
+        //         return "expense/create-expense";
+        //     }
+        // }
+
         expense.setCreatedAt(LocalDateTime.now());
         expenseService.save(expense);
         return "redirect:/employee/expense/create-expense?success";

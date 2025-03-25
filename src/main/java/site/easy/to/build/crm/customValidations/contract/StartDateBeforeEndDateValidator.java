@@ -18,8 +18,8 @@ public class StartDateBeforeEndDateValidator implements ConstraintValidator<Star
             start = contract.getStartDate();
             end = contract.getEndDate();
         } else if (obj instanceof Budget budget) {
-            start = budget.getStartDate();
-            end = budget.getEndDate();
+            // start = budget.getStartDate();
+            // end = budget.getEndDate();
         }
 
         if (start == null || end == null || start.isEmpty() || end.isEmpty()) {

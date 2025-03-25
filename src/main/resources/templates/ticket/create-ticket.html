@@ -70,6 +70,10 @@
                     <div class="card">
                         <div class="card-body">
                             <h4 class="card-title">Create New Ticket</h4>
+                            <!-- Alert message section -->
+                            <div th:if="${alertMessage}" class="alert alert-warning" role="alert">
+                                <span th:text="${alertMessage}"></span>
+                            </div>
                             <form th:object="${ticket}" th:action="@{/employee/ticket/create-ticket}" method="post">
 
                                 <label class="m-t-20" for="subject">Subject:</label>
@@ -135,6 +139,11 @@
                                         <option th:each="customer : ${customers}" th:text="${customer.name}" th:value="${customer.customerId}"></option>
                                     </select>
                                 </div>
+
+                                <label class="m-t-20" for="montant">Price:</label>
+                                <div class="input-group">
+                                    <input type="number" id="montant" name="montant" class="form-control">
+                                </div>                             
 
                                 <button type="submit" class="btn btn-primary m-t-20">Create ticket</button>
                             </form>

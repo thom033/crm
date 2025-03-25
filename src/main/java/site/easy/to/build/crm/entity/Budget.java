@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import site.easy.to.build.crm.customValidations.contract.StartDateBeforeEndDate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,7 +26,7 @@ public class Budget {
     @DecimalMin(value = "0.00", inclusive = true, message = "Amount must be ≥ 0.00")
     @DecimalMax(value = "9999999.99", inclusive = true, message = "Amount must be ≤ 9999999.99")
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
-    private double amount;
+    private BigDecimal amount;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -37,7 +38,7 @@ public class Budget {
     public Budget() {
     }
 
-    public Budget(Customer customer, double amount, LocalDateTime createdAt, int userId) {
+    public Budget(Customer customer, BigDecimal amount, LocalDateTime createdAt, int userId) {
         this.amount = amount;
         this.customer = customer;
         this.createdAt = createdAt;
@@ -52,11 +53,11 @@ public class Budget {
         this.budgetId = budgetId;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 

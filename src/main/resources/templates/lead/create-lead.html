@@ -71,6 +71,10 @@
                     <div class="card">
                         <div class="card-body">
                             <h4 class="card-title">Create New Lead</h4>
+                            <!-- Alert message section -->
+                            <div th:if="${alertMessage}" class="alert alert-warning" role="alert">
+                                <span th:text="${alertMessage}"></span>
+                            </div>
                             <form th:object="${lead}" th:action="@{/employee/lead/create}" enctype="multipart/form-data" id="email-form" method="post">
                                 <input type="hidden" id="allFiles" name="allFiles">
                                 <label class="m-t-20" for="name">Name:</label>
@@ -102,6 +106,10 @@
                                     <span class="text-danger font-weight-bold" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></span>
                                 </div>
 
+                                <label class="m-t-20" for="montant">Price:</label>
+                                <div class="input-group">
+                                    <input type="number" id="montant" name="montant" class="form-control">
+                                </div>
 
                                 <label class="m-t-20" for="employeeId">Assign Employee:</label>
                                 <div class="input-group">

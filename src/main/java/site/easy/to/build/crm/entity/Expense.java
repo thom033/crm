@@ -32,10 +32,11 @@ public class Expense {
 
     @Column(name = "update_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
-    
+
     @NotNull(message = "User ID is required")
-    @Column(name = "user_id", nullable = false)
-    private int userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     // Getters and Setters
 
@@ -79,12 +80,12 @@ public class Expense {
         this.createdAt = createdAt;
     }
 
-    public int getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserId(int userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public LocalDateTime getUpdatedAt() {

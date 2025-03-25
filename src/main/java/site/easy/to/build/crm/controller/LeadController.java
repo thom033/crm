@@ -16,6 +16,8 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import site.easy.to.build.crm.entity.*;
 import site.easy.to.build.crm.entity.settings.LeadEmailSettings;
 import site.easy.to.build.crm.google.model.calendar.EventDisplay;
@@ -25,18 +27,24 @@ import site.easy.to.build.crm.google.service.acess.GoogleAccessService;
 import site.easy.to.build.crm.google.service.calendar.GoogleCalendarApiService;
 import site.easy.to.build.crm.google.service.drive.GoogleDriveApiService;
 import site.easy.to.build.crm.google.service.gmail.GoogleGmailApiService;
+import site.easy.to.build.crm.repository.CustomerRepository;
+import site.easy.to.build.crm.service.budget.BudgetService;
 import site.easy.to.build.crm.service.customer.CustomerService;
+import site.easy.to.build.crm.service.expense.ExpenseService;
 import site.easy.to.build.crm.service.drive.GoogleDriveFileService;
 import site.easy.to.build.crm.service.file.FileService;
 import site.easy.to.build.crm.service.lead.LeadActionService;
 import site.easy.to.build.crm.service.lead.LeadService;
 import site.easy.to.build.crm.service.settings.LeadEmailSettingsService;
+import site.easy.to.build.crm.service.tauxalerte.TauxAlerteService;
 import site.easy.to.build.crm.service.user.UserService;
 import site.easy.to.build.crm.util.*;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -47,6 +55,16 @@ import java.util.regex.Pattern;
 @RequestMapping("/employee/lead")
 public class LeadController {
 
+    @Autowired
+    private TauxAlerteService tauxAlerteService;
+
+    @Autowired
+    private CustomerRepository customerRepository;
+    @Autowired
+    private ExpenseService depenseService;
+
+    @Autowired
+    private BudgetService budgetService;
     private final LeadService leadService;
     private final AuthenticationUtils authenticationUtils;
     private final UserService userService;
@@ -166,12 +184,27 @@ public class LeadController {
 
     @PostMapping("/create")
     public String createLead(@ModelAttribute("lead") @Validated Lead lead, BindingResult bindingResult,
-                             @RequestParam("customerId") int customerId, @RequestParam("employeeId") int employeeId,
-                             Authentication authentication, @RequestParam("allFiles")@Nullable String files,
-                             @RequestParam("folderId") @Nullable String folderId, Model model) throws JsonProcessingException {
+                            @RequestParam("customerId") int customerId,
+                            @RequestParam("employeeId") int employeeId,
+                            @RequestParam(value = "montant", required = false) BigDecimal montant,
+                            @RequestParam(value = "confirmAction", required = false) Boolean confirmAction,
+                            @RequestParam Map<String, String> formParams,
+                            Authentication authentication,
+                            @RequestParam("allFiles") @Nullable String files,
+                            @RequestParam("folderId") @Nullable String folderId,
+                            RedirectAttributes redirectAttributes,
+                            Model model) throws JsonProcessingException {
+
+        System.out.println("=== DÉBUT DE LA MÉTHODE createLead ===");
+        System.out.println("Lead: " + lead);
+        System.out.println("customerId: " + customerId);
+        System.out.println("employeeId: " + employeeId);
+        System.out.println("montant: " + montant);
+        System.out.println("confirmAction: " + confirmAction);
 
         int userId = authenticationUtils.getLoggedInUserId(authentication);
         User manager = userService.findById(userId);
+        
         if(manager.isInactiveUser()) {
             return "error/account-inactive";
         }
@@ -184,9 +217,148 @@ public class LeadController {
 
         User employee = userService.findById(employeeId);
         Customer customer = customerService.findByCustomerId(customerId);
+        
         if(AuthorizationUtil.hasRole(authentication, "ROLE_EMPLOYEE") && (employee.getId() != userId)) {
             return "error/500";
         }
+        
+        // Vérification immédiate du dépassement de budget si un montant est spécifié
+        // et que la confirmation n'a pas déjà été donnée
+        if (montant != null && montant.compareTo(BigDecimal.ZERO) > 0 && confirmAction == null) {
+            System.out.println("Vérification du budget pour le montant: " + montant);
+            
+            // Récupérer le budget total du client
+            BigDecimal budgetTotal = budgetService.getTotalBudget(customerId);
+            System.out.println("budgetTotal: " + budgetTotal);
+
+            if (budgetTotal != null && budgetTotal.compareTo(BigDecimal.ZERO) > 0) {
+                // Récupérer le total des dépenses actuelles
+                BigDecimal totalDepenses = depenseService.getTotalDepensesByCustomerId(customerId);
+                if(totalDepenses == null) {
+                    totalDepenses = BigDecimal.ZERO;
+                }
+                System.out.println("totalDepenses: " + totalDepenses);
+                
+                // Ajouter le nouveau montant
+                BigDecimal newTotalDepenses = totalDepenses.add(montant);
+                System.out.println("newTotalDepenses: " + newTotalDepenses);
+                
+                // Vérifier si le budget est dépassé (comparaison directe)
+                boolean budgetDepasse = newTotalDepenses.compareTo(budgetTotal) > 0;
+                System.out.println("Le budget est-il dépassé? " + budgetDepasse);
+                
+                if (budgetDepasse) {
+                    // Créer un message de confirmation
+                    String confirmationMessage = "Attention : Le total des dépenses (" + newTotalDepenses +
+                        " €) dépasse le budget total (" + budgetTotal + " €) pour ce client. Voulez-vous continuer malgré ce dépassement?";
+                    
+                    System.out.println("Message de confirmation: " + confirmationMessage);
+                    
+                    // Préparer les données pour la page de confirmation
+                    model.addAttribute("confirmationMessage", confirmationMessage);
+                    
+                    // Préparer les données du formulaire pour la confirmation
+                    Map<String, String> formDataMap = new HashMap<>(formParams);
+                    formDataMap.put("customerId", String.valueOf(customerId));
+                    formDataMap.put("employeeId", String.valueOf(employeeId));
+                    if (montant != null) {
+                        formDataMap.put("montant", montant.toString());
+                    }
+                    if (files != null) {
+                        formDataMap.put("allFiles", files);
+                    }
+                    if (folderId != null) {
+                        formDataMap.put("folderId", folderId);
+                    }
+                    
+                    model.addAttribute("formData", formDataMap);
+                    model.addAttribute("confirmationUrl", "/employee/lead/create");
+                    model.addAttribute("cancelUrl", "/employee/lead/create");
+                    
+                    // Définir le titre de la page
+                    model.addAttribute("title", "Confirmation de dépassement de budget");
+                    model.addAttribute("subtitle", "Lead pour " + customer.getName());
+                    
+                    System.out.println("Redirection vers la page de confirmation de lead");
+                    return "lead/lead-confirmation";
+                }
+            }
+        }
+        
+        // Si nous arrivons ici, soit il n'y a pas de dépassement de budget,
+        // soit l'utilisateur a confirmé le dépassement
+
+        // Vérification du taux d'alerte si un montant est spécifié
+        if (montant != null && montant.compareTo(BigDecimal.ZERO) > 0) {
+            System.out.println("Vérification du taux d'alerte pour le montant: " + montant);
+            
+            // Récupérer le budget total du client
+            BigDecimal budgetTotal = budgetService.getTotalBudget(customerId);
+            System.out.println("budgetTotal: " + budgetTotal);
+            
+            if (budgetTotal != null && budgetTotal.compareTo(BigDecimal.ZERO) > 0) {
+                // Récupérer le total des dépenses actuelles
+                BigDecimal totalDepenses = depenseService.getTotalDepensesByCustomerId(customerId);
+                if( totalDepenses == null) { 
+                    totalDepenses = BigDecimal.ZERO;
+                }
+                System.out.println("totalDepenses: " + totalDepenses);
+                
+                // Ajouter le nouveau montant
+                BigDecimal newTotalDepenses = totalDepenses.add(montant);
+                System.out.println("newTotalDepenses: " + newTotalDepenses);
+                
+                // Récupérer le taux d'alerte
+                BigDecimal tauxAlerte = tauxAlerteService.getLatestTauxAlerte();
+                System.out.println("tauxAlerte (original): " + tauxAlerte);
+                
+                // Convertir le taux de pourcentage à décimal si nécessaire
+                if (tauxAlerte.compareTo(new BigDecimal("1")) > 0) {
+                    tauxAlerte = tauxAlerte.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+                }
+                System.out.println("tauxAlerte (ajusté): " + tauxAlerte);
+                
+                // Calculer le seuil d'alerte
+                BigDecimal seuilAlerte = budgetTotal.multiply(tauxAlerte);
+                System.out.println("seuilAlerte: " + seuilAlerte);
+                
+                // Vérifier si le seuil est dépassé
+                boolean seuilDepasse = newTotalDepenses.compareTo(seuilAlerte) > 0;
+                System.out.println("Le seuil est-il dépassé? " + seuilDepasse);
+                
+                if (seuilDepasse) {
+                    // Pour l'affichage, utiliser le taux en pourcentage
+                    BigDecimal tauxAlertePercent = tauxAlerte.multiply(new BigDecimal("100"));
+                    
+                    String alertMessage = "Attention : Le total des dépenses (" + newTotalDepenses +
+                        " €) dépasse " + tauxAlertePercent +
+                        "% du budget total (" + budgetTotal + " €) pour ce client.";
+                    
+                    System.out.println("Message d'alerte: " + alertMessage);
+                    model.addAttribute("alertMessage", alertMessage);
+                    
+                    // Préparer les données du formulaire pour la réaffichage
+                    List<User> employees = new ArrayList<>();
+                    List<Customer> customers;
+
+                    if(AuthorizationUtil.hasRole(authentication, "ROLE_MANAGER")) {
+                        employees = userService.findAll();
+                        customers = customerService.findAll();
+                    } else {
+                        employees.add(manager);
+                        customers = customerService.findByUserId(manager.getId());
+                    }
+
+                    model.addAttribute("alertMessage", alertMessage);
+                    model.addAttribute("employees", employees);
+                    model.addAttribute("customers", customers);
+                    // model.addAttribute("ticket", ticket);
+
+                    return "lead/create-lead";
+                }
+            }
+        }
+
         lead.setCustomer(customer);
         lead.setEmployee(employee);
         lead.setManager(manager);
@@ -194,8 +366,7 @@ public class LeadController {
         lead.setCreatedAt(LocalDateTime.now());
 
         ObjectMapper objectMapper = new ObjectMapper();
-        List<Attachment> allFiles = objectMapper.readValue(files, new TypeReference<List<Attachment>>() {
-        });
+        List<Attachment> allFiles = objectMapper.readValue(files, new TypeReference<List<Attachment>>() {});
 
         if (!(authentication instanceof UsernamePasswordAuthenticationToken) && googleDriveApiService != null) {
             OAuthUser oAuthUser = authenticationUtils.getOAuthUserFromAuthentication(authentication);
@@ -208,12 +379,21 @@ public class LeadController {
             }
         }
 
+        // Sauvegarder le lead d'abord pour obtenir son ID
         Lead createdLead = leadService.save(lead);
+        
+        // Créer une dépense si un montant a été spécifié
+        if (montant != null && montant.compareTo(BigDecimal.ZERO) > 0) {
+            depenseService.createDepenseForLead(createdLead, montant);
+        }
+        
         fileUtil.saveFiles(allFiles, createdLead);
 
         if (lead.getGoogleDrive() != null) {
             fileUtil.saveGoogleDriveFiles(authentication, allFiles, folderId, createdLead);
         }
+
+        System.out.println("=== FIN DE LA MÉTHODE createLead ===");
 
         if (lead.getStatus().equals("meeting-to-schedule")) {
             return "redirect:/employee/calendar/create-event?leadId=" + lead.getLeadId();
