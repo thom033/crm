@@ -39,30 +39,11 @@
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-body">
-                                <h1>Import Tickets</h1>
-                                <form action="/employee/csv/import-tickets" method="post" enctype="multipart/form-data" th:action="@{/employee/csv/import-tickets}" th:object="${csrf}">
-                                    <input type="file" name="file" accept=".csv" required>
-                                    <input type="hidden" th:name="filePath" th:value="${filePath}">
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                    <button type="submit">Import</button>
-                                </form>
-                                <h1>Import Customers</h1>
-                                <form action="/employee/csv/import-customers" method="post" enctype="multipart/form-data" th:action="@{/employee/csv/import-customers}" th:object="${csrf}">
-                                    <input type="file" name="file" accept=".csv" required>
-                                    <input type="hidden" th:name="filePath" th:value="${filePath}">
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                    <button type="submit">Import</button>
-                                </form>
-                                <h1>Import Leads</h1>
-                                <form action="/employee/csv/import-leads" method="post" enctype="multipart/form-data" th:action="@{/employee/csv/import-leads}" th:object="${csrf}">
-                                    <input type="file" name="file" accept=".csv" required>
-                                    <input type="hidden" th:name="filePath" th:value="${filePath}">
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                    <button type="submit">Import</button>
-                                </form>
-                                <h1>Import Contracts</h1>
-                                <form action="/employee/csv/import-contracts" method="post" enctype="multipart/form-data" th:action="@{/employee/csv/import-contracts}" th:object="${csrf}">
-                                    <input type="file" name="file" accept=".csv" required>
+                                <h1>Import Data</h1>
+                                <form action="/employee/csv/import-data" method="post" enctype="multipart/form-data" th:action="@{/employee/csv/import-data}" th:object="${csrf}">
+                                    customer:<input type="file" name="fileCustomer" accept=".csv" required><br>
+                                    budget:<input type="file" name="fileBudget" accept=".csv" required><br>
+                                    depense:<input type="file" name="fileTicket" accept=".csv" required><br>
                                     <input type="hidden" th:name="filePath" th:value="${filePath}">
                                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                     <button type="submit">Import</button>

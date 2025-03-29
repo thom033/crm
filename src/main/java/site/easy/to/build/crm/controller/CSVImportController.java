@@ -4,6 +4,7 @@ import com.opencsv.exceptions.CsvException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import site.easy.to.build.crm.entity.Budget;
 import site.easy.to.build.crm.entity.Contract;
 import site.easy.to.build.crm.entity.Customer;
 import site.easy.to.build.crm.entity.Lead;
@@ -36,41 +38,6 @@ public class CSVImportController {
     }
 
     @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @PostMapping("/import-tickets")
-    public String importTickets(@RequestParam("file") MultipartFile file, Model model) {
-        try {
-            System.out.println("Starting importTickets method");
-
-            // Save the file temporarily to get the absolute path
-            File tempFile = File.createTempFile("tickets", ".csv");
-            file.transferTo(tempFile);
-
-            String absoluteFilePath = tempFile.getAbsolutePath();
-            System.out.println("Absolute file path: " + absoluteFilePath);
-
-            List<String> errors = csvImportService.validateTicketsFromCsv(absoluteFilePath);
-            if (!errors.isEmpty()) {
-                System.out.println("Validation errors found: " + errors);
-                model.addAttribute("errors", errors);
-                return "csv/import-errors";
-            }
-
-            List<Ticket> tickets = csvImportService.parseTicketsFromCsv(absoluteFilePath);
-            model.addAttribute("tickets", tickets);
-            model.addAttribute("filePath", absoluteFilePath); // Add filePath to model
-            model.addAttribute("type", "tickets"); // Add type to model
-            System.out.println("Tickets parsed and added to model");
-            
-            return "csv/confirm-import";
-        } catch (IOException | CsvException e) {
-            String error = "Error importing tickets: " + e.getMessage();
-            model.addAttribute("error", error);
-            System.out.println("Error importing tickets: " + e.getMessage());
-            return "csv/import-errors";
-        }
-    }
-
-    @PreAuthorize("hasRole('ROLE_MANAGER')")
     @PostMapping("/confirm-import")
     public String confirmImport(@RequestParam("filePath") String filePath, @RequestParam("type") String type, Model model) {
         System.out.println("Starting confirmImport method");
@@ -86,8 +53,8 @@ public class CSVImportController {
         try {
             switch (type) {
                 case "tickets":
-                    List<Ticket> tickets = csvImportService.parseTicketsFromCsv(filePath);
-                    csvImportService.saveTickets(tickets);
+                    csvImportService.parseTicketsFromCsv(filePath);
+                    csvImportService.saveTickets();
                     System.out.println("Tickets saved successfully");
                     return "redirect:/employee/ticket/manager/all-tickets";
                 case "customers":
@@ -105,6 +72,11 @@ public class CSVImportController {
                     csvImportService.saveContracts(contracts);
                     System.out.println("Contracts saved successfully");
                     return "redirect:/employee/contract/manager/show-all";
+                case "budget": // Add handling for budget
+                    List<Budget> budgets = csvImportService.parseBudgetFromCsv(filePath);
+                    csvImportService.saveBudgets(budgets);
+                    System.out.println("Budgets saved successfully");
+                    return "redirect:/employee/csv/import-tickets";
                 default:
                     model.addAttribute("error", "Invalid import type.");
                     System.out.println("Invalid import type: " + type);
@@ -118,84 +90,57 @@ public class CSVImportController {
     }
 
     @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @PostMapping("/import-customers")
-    public String importCustomers(@RequestParam("file") MultipartFile file, Model model) {
+    @PostMapping("/import-data")
+    @Transactional // Add transactional annotation to ensure all-or-nothing behavior
+    public String importData(
+            @RequestParam("fileCustomer") MultipartFile fileCustomer,
+            @RequestParam("fileBudget") MultipartFile fileBudget,
+            @RequestParam("fileTicket") MultipartFile fileTicket,
+            Model model) {
         try {
-            File tempFile = File.createTempFile("customers", ".csv");
-            file.transferTo(tempFile);
+            // Process Customers
+            File tempCustomerFile = File.createTempFile("customers", ".csv");
+            fileCustomer.transferTo(tempCustomerFile);
+            String customerFilePath = tempCustomerFile.getAbsolutePath();
 
-            String absoluteFilePath = tempFile.getAbsolutePath();
-
-            List<String> errors = csvImportService.validateCustomersFromCsv(absoluteFilePath);
-            if (!errors.isEmpty()) {
-                model.addAttribute("errors", errors);
-                return "csv/import-errors";
+            List<String> customerErrors = csvImportService.validateCustomersFromCsv(customerFilePath);
+            if (!customerErrors.isEmpty()) {
+                model.addAttribute("errors", customerErrors);
+                return "csv/import-errors"; // Return error page if validation fails
             }
+            List<Customer> customers = csvImportService.parseCustomersFromCsv(customerFilePath);
+            csvImportService.saveCustomers(customers);
 
-            List<Customer> customers = csvImportService.parseCustomersFromCsv(absoluteFilePath);
-            model.addAttribute("customers", customers);
-            model.addAttribute("filePath", absoluteFilePath);
-            model.addAttribute("type", "customers"); // Add type to model
-            
-            return "csv/confirm-import";
-        } catch (IOException | CsvException e) {
-            model.addAttribute("error", "Error importing customers: " + e.getMessage());
-            return "csv/import-errors";
-        }
-    }
+            // Process Budgets
+            File tempBudgetFile = File.createTempFile("budgets", ".csv");
+            fileBudget.transferTo(tempBudgetFile);
+            String budgetFilePath = tempBudgetFile.getAbsolutePath();
 
-    @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @PostMapping("/import-leads")
-    public String importLeads(@RequestParam("file") MultipartFile file, Model model) {
-        try {
-            File tempFile = File.createTempFile("leads", ".csv");
-            file.transferTo(tempFile);
-
-            String absoluteFilePath = tempFile.getAbsolutePath();
-
-            List<String> errors = csvImportService.validateLeadsFromCsv(absoluteFilePath);
-            if (!errors.isEmpty()) {
-                model.addAttribute("errors", errors);
-                return "csv/import-errors";
+            List<String> budgetErrors = csvImportService.validateBudgetFromCsv(budgetFilePath);
+            if (!budgetErrors.isEmpty()) {
+                model.addAttribute("errors", budgetErrors);
+                return "csv/import-errors"; // Return error page if validation fails
             }
+            List<Budget> budgets = csvImportService.parseBudgetFromCsv(budgetFilePath);
+            csvImportService.saveBudgets(budgets);
 
-            List<Lead> leads = csvImportService.parseLeadsFromCsv(absoluteFilePath);
-            model.addAttribute("leads", leads);
-            model.addAttribute("filePath", absoluteFilePath);
-            model.addAttribute("type", "leads"); // Add type to model
-            
-            return "csv/confirm-import";
-        } catch (IOException | CsvException e) {
-            model.addAttribute("error", "Error importing leads: " + e.getMessage());
-            return "csv/import-errors";
-        }
-    }
+            // Process Tickets
+            File tempTicketFile = File.createTempFile("tickets", ".csv");
+            fileTicket.transferTo(tempTicketFile);
+            String ticketFilePath = tempTicketFile.getAbsolutePath();
 
-    @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @PostMapping("/import-contracts")
-    public String importContracts(@RequestParam("file") MultipartFile file, Model model) {
-        try {
-            File tempFile = File.createTempFile("contracts", ".csv");
-            file.transferTo(tempFile);
-
-            String absoluteFilePath = tempFile.getAbsolutePath();
-
-            List<String> errors = csvImportService.validateContractsFromCsv(absoluteFilePath);
-            if (!errors.isEmpty()) {
-                model.addAttribute("errors", errors);
-                return "csv/import-errors";
+            List<String> ticketErrors = csvImportService.validateTicketsFromCsv(ticketFilePath);
+            if (!ticketErrors.isEmpty()) {
+                model.addAttribute("errors", ticketErrors);
+                return "csv/import-errors"; // Return error page if validation fails
             }
+            csvImportService.parseTicketsFromCsv(ticketFilePath);
+            csvImportService.saveTickets();
 
-            List<Contract> contracts = csvImportService.parseContractsFromCsv(absoluteFilePath);
-            System.out.println("Parsed contracts: " + contracts); // Add this line to log the parsed contracts
-            model.addAttribute("contracts", contracts);
-            model.addAttribute("filePath", absoluteFilePath);
-            model.addAttribute("type", "contracts"); // Add type to model
-            
-            return "csv/confirm-import";
+            return "redirect:/employee/csv/import-tickets"; // Redirect to a success page
         } catch (IOException | CsvException e) {
-            model.addAttribute("error", "Error importing contracts: " + e.getMessage());
-            return "csv/import-errors";
+            model.addAttribute("error", "Error importing data: " + e.getMessage());
+            return "csv/import-errors"; // Return error page on exception
         }
     }
 }

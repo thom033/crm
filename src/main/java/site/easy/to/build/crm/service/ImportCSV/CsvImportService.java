@@ -8,13 +8,17 @@ import org.springframework.stereotype.Service;
 import site.easy.to.build.crm.entity.Contract;
 import site.easy.to.build.crm.entity.Customer;
 import site.easy.to.build.crm.entity.CustomerLoginInfo;
+import site.easy.to.build.crm.entity.Expense;
 import site.easy.to.build.crm.entity.Lead;
 import site.easy.to.build.crm.entity.Ticket;
 import site.easy.to.build.crm.entity.User;
+import site.easy.to.build.crm.entity.Budget;
 import site.easy.to.build.crm.repository.ContractRepository;
 import site.easy.to.build.crm.repository.CustomerRepository;
+import site.easy.to.build.crm.repository.ExpenseRepository;
 import site.easy.to.build.crm.repository.LeadRepository;
 import site.easy.to.build.crm.repository.TicketRepository;
+import site.easy.to.build.crm.repository.BudgetRepository;
 import site.easy.to.build.crm.service.customer.CustomerLoginInfoService;
 import site.easy.to.build.crm.service.customer.CustomerService;
 import site.easy.to.build.crm.service.user.UserService;
@@ -51,6 +55,12 @@ public class CsvImportService {
     @Autowired
     private ContractRepository contractRepository;
 
+    @Autowired
+    private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private BudgetRepository budgetRepository;
+
     public List<String> validateTicketsFromCsv(String filePath) throws IOException, CsvException {
         List<String> errors = new ArrayList<>();
         try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
@@ -62,52 +72,23 @@ public class CsvImportService {
                     isFirstLine = false;
                     continue;
                 }
-                if (record.length != 8) {
+                if (record.length != 5) {
                     errors.add("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
                     continue;
                 }
                 try {
-                    try {
-                        Integer.parseInt(record[4]);
-                    } catch (NumberFormatException e) {
-                        errors.add("Invalid manager ID format at line " + (records.indexOf(record) + 1) + ": " + record[4]);
-                        continue;
-                    }
-                    try {
-                        Integer.parseInt(record[5]);
-                    } catch (NumberFormatException e) {
-                        errors.add("Invalid employee ID format at line " + (records.indexOf(record) + 1) + ": " + record[5]);
-                        continue;
-                    }
-                    try {
-                        Integer.parseInt(record[6]);
-                    } catch (NumberFormatException e) {
-                        errors.add("Invalid customer ID format at line " + (records.indexOf(record) + 1) + ": " + record[6]);
-                        continue;
-                    }
-                    try {
-                        LocalDateTime.parse(record[7]);
-                    } catch (DateTimeParseException e) {
-                        errors.add("Invalid date format at line " + (records.indexOf(record) + 1) + ": " + record[7] + ". Expected format: yyyy-MM-ddTHH:mm:ss");
-                        continue;
-                    }
+                    Customer customer = customerService.findByEmail(record[0]);
 
-                    User manager = userService.findById(Integer.parseInt(record[4]));
-                    User employee = userService.findById(Integer.parseInt(record[5]));
-                    Customer customer = customerService.findByCustomerId(Integer.parseInt(record[6]));
-
-                    if (manager == null) {
-                        errors.add("Manager not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " manager id => " + record[4]);
-                    }
-                    if (employee == null) {
-                        errors.add("Employee not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " employee id => " + record[5]);
-                    }
                     if (customer == null) {
-                        errors.add("Customer not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " customer id => " + record[6]);
+                        errors.add("Customer not found at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    }
+
+                    if (!record[2].equals("lead") && !record[2].equals("ticket")){
+                        errors.add("Invalid type at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " type => " + record[2]);
                     }
 
                 } catch (Exception e) {
-                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " error => " + e.getMessage());
                 }
             }
         }
@@ -125,19 +106,9 @@ public class CsvImportService {
                     isFirstLine = false;
                     continue;
                 }
-                if (record.length != 15) {
+                if (record.length != 2) {
                     errors.add("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
                     continue;
-                }
-                try {
-                    try {
-                        LocalDateTime.parse(record[12]);
-                    } catch (DateTimeParseException e) {
-                        errors.add("Invalid date format at line " + (records.indexOf(record) + 1) + ": " + record[12] + ". Expected format: yyyy-MM-ddTHH:mm:ss");
-                        continue;
-                    }
-                } catch (Exception e) {
-                    errors.add("Unexpected error at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " erreur => " + e.getMessage());
                 }
             }
         }
@@ -273,8 +244,8 @@ public class CsvImportService {
         return errors;
     }
 
-    public List<Ticket> parseTicketsFromCsv(String filePath) throws IOException, CsvException {
-        List<Ticket> tickets = new ArrayList<>();
+    public List<String> validateBudgetFromCsv(String filePath) throws IOException, CsvException {
+        List<String> errors = new ArrayList<>();
         try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
             List<String[]> records = reader.readAll();
             boolean isFirstLine = true;
@@ -284,30 +255,91 @@ public class CsvImportService {
                     isFirstLine = false;
                     continue;
                 }
-                if (record.length == 8) {
+                if (record.length != 2) {
+                    errors.add("Invalid record length at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    continue;
+                }
+                try {
+                    Customer customer = customerService.findByEmail(record[0]);
+                    if (customer == null) {
+                        errors.add("Customer not found at line " + (records.indexOf(record) + 1) + ": " + record[0]);
+                    }
+                    new BigDecimal(record[1]); // Validate amount format
+                } catch (NumberFormatException e) {
+                    errors.add("Invalid amount format at line " + (records.indexOf(record) + 1) + ": " + record[1]);
+                }
+            }
+        }
+        return errors;
+    }
+
+    public void parseTicketsFromCsv(String filePath) throws IOException, CsvException {
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+            boolean isFirstLine = true;
+
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (record.length == 5) {
                     try {
-                        Ticket ticket = new Ticket();
-                        ticket.setSubject(record[0]);
-                        ticket.setDescription(record[1]);
-                        ticket.setStatus(record[2]);
-                        ticket.setPriority(record[3]);
-                        ticket.setManager(userService.findById(Integer.parseInt(record[4])));
-                        ticket.setEmployee(userService.findById(Integer.parseInt(record[5])));
-                        ticket.setCustomer(customerService.findByCustomerId(Integer.parseInt(record[6])));
-                        ticket.setCreatedAt(LocalDateTime.parse(record[7]));
-                        tickets.add(ticket);
+                        Customer customer = customerService.findByEmail(record[0]);
+                        int customerId = customer.getCustomerId();
+                        System.out.println("Customer ID: " + customerId);
+
+                        Lead lead = null;
+                        Ticket ticket = null;
+
+                        Expense expense = new Expense();
+
+                        if(record[2].equals("lead")){
+                            lead = new Lead();
+                            lead.setName(record[1]);
+                            lead.setStatus(record[3]);
+                            lead.setPhone("1234567890");
+                            lead.setMeetingId(null);
+                            lead.setGoogleDrive(false);
+                            lead.setGoogleDriveFolderId("1234567890");
+                            lead.setManager(userService.findById(55));
+                            lead.setEmployee(userService.findById(55));
+                            lead.setCustomer(customer);
+                            lead.setCreatedAt(LocalDateTime.now());
+                            leadRepository.save(lead);
+                        }
+
+                        if (record[2].equals("ticket")) { 
+                            ticket = new Ticket();                           
+                            ticket.setSubject(record[1]);
+                            ticket.setDescription(record[1]);
+                            ticket.setStatus(record[3]);
+                            ticket.setPriority("low");
+                            ticket.setManager(userService.findById(55));
+                            ticket.setEmployee(userService.findById(55));
+                            ticket.setCustomer(customer);
+                            ticket.setCreatedAt(LocalDateTime.now());
+                            ticketRepository.save(ticket);
+                        }
+
+                        expense.setTicket(ticket);
+                        expense.setLead(lead);
+                        expense.setAmount(Double.parseDouble(record[4].replace(",", ".")));
+                        expense.setCreatedAt(LocalDateTime.now());
+                        expense.setUpdatedAt(LocalDateTime.now());
+                        expense.setUser(userService.findById(55));
+                        expenseRepository.save(expense);
                     } catch (Exception e) {
-                        System.err.println("Error parsing record at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                        System.err.println("Error parsing record at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record) + " error => " + e.getMessage());
                     }
                 }
             }
         }
-        return tickets;
     }
 
     public List<Customer> parseCustomersFromCsv(String filePath) throws IOException, CsvException {
         List<Customer> customers = new ArrayList<>();
-        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) { 
             List<String[]> records = reader.readAll();
             boolean isFirstLine = true;
 
@@ -316,32 +348,35 @@ public class CsvImportService {
                     isFirstLine = false;
                     continue;
                 }
-                if (record.length == 15) {
+                if (record.length == 2) {
                     try {
                         Customer customer = new Customer();
-                        customer.setName(record[0]);
-                        customer.setPhone(record[1]);
-                        customer.setAddress(record[2]);
-                        customer.setCity(record[3]);
-                        customer.setState(record[4]);
-                        customer.setCountry(record[5]);
+                        customer.setName(record[1]);
+                        customer.setEmail(record[0]);
 
-                        // User user = userService.findById(Integer.parseInt(record[6]));
+                        customer.setPosition("default position");
+                        customer.setPhone("1234567890");
+                        customer.setAddress("default address");
+                        customer.setCity("default city");
+                        customer.setState("default state");
+                        customer.setCountry("Madagascar");
+                        customer.setTwitter("default twitter");
+                        customer.setDescription("default description");
+                        customer.setFacebook("facebook");
+                        customer.setYoutube("youtube");
+
+                        CustomerLoginInfo customerLoginInfo = new CustomerLoginInfo();
+                        customerLoginInfo.setEmail(record[1]);
+                        customerLoginInfo.setPassword("password");
+
+                        // Add userId of the connected user
                         User user = userService.findById(55);
                         customer.setUser(user);
 
-                        customer.setDescription(record[7]);
-                        customer.setPosition(record[8]);
-                        customer.setTwitter(record[9]);
-                        customer.setFacebook(record[10]);
-                        customer.setYoutube(record[11]);
-                        customer.setCreatedAt(LocalDateTime.parse(record[12]));
-                        customer.setEmail(record[13]);
+                        customerLoginInfo.setPasswordSet(true);
 
-                        CustomerLoginInfo customerLoginInfo = new CustomerLoginInfo();
-                        customerLoginInfo.setEmail(record[13]);
-                        customerLoginInfo.setPassword("defaultPassword");
-                        customerLoginInfo.setPasswordSet(false);
+                        // Save CustomerLoginInfo first
+                        customerLoginInfo = customerLoginInfoService.save(customerLoginInfo);
                         
                         customer.setCustomerLoginInfo(customerLoginInfo);
                         
@@ -429,8 +464,38 @@ public class CsvImportService {
         return contracts;
     }
 
-    public void saveTickets(List<Ticket> tickets) {
-        ticketRepository.saveAll(tickets);
+    public List<Budget> parseBudgetFromCsv(String filePath) throws IOException, CsvException {
+        List<Budget> budgets = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+            List<String[]> records = reader.readAll();
+            boolean isFirstLine = true;
+
+            for (String[] record : records) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                if (record.length == 2) {
+                    try {
+                        Customer customer = customerService.findByEmail(record[0]);
+                        if (customer != null) {
+                            Budget budget = new Budget();
+                            budget.setCustomer(customer);
+                            budget.setAmount(new BigDecimal(record[1]));
+                            budget.setCreatedAt(LocalDateTime.now());
+                            budgets.add(budget);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error parsing record at line " + (records.indexOf(record) + 1) + ": " + String.join(",", record));
+                    }
+                }
+            }
+        }
+        return budgets;
+    }
+
+    public void saveTickets() {
+        System.out.println("Fonction Misy SYSOUT ftsn");
     }
 
     public void saveCustomers(List<Customer> customers) {
@@ -444,5 +509,9 @@ public class CsvImportService {
     public void saveContracts(List<Contract> contracts) {
         System.out.println("Saving contracts: " + contracts); // Add this line to log the contracts
         contractRepository.saveAll(contracts);
+    }
+
+    public void saveBudgets(List<Budget> budgets) {
+        budgetRepository.saveAll(budgets);
     }
 }

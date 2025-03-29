@@ -40,8 +40,9 @@
                         <div class="card">
                             <div class="card-body">
                                 <h1>Import Errors</h1>
-                                <p>Errors occurred during the import:</p>
-                                <ul>
+                                <p th:if="${error}" th:text="${error}"></p> <!-- Display single error -->
+                                <p th:if="${errors}">Errors occurred during the import:</p>
+                                <ul th:if="${errors}">
                                     <li th:each="error : ${errors}" th:text="${error}"></li>
                                 </ul>
                                 <a href="/employee/csv/import-tickets">Go back</a>

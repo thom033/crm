@@ -26,7 +26,7 @@ public class Customer {
 
     @Column(name = "email")
     @NotBlank(message = "Email is required")
-    @Email(message = "Please enter a valid email format")
+    // @Email(message = "Please enter a valid email format")
     @UniqueEmail
     private String email;
 
