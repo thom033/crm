@@ -1,0 +1,5 @@
+customer_email,amount
+nonexistent@example.com,1000
+client2@example.com,invalid_amount
+client3@example.com,2000
+client4@example.com,3000 

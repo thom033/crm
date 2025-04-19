@@ -1,0 +1,5 @@
+customer_email,subject,type,status,amount
+nonexistent@example.com,Ticket 1,ticket,open,100
+client2@example.com,Ticket 2,invalid_type,open,200
+client3@example.com,Ticket 3,ticket,open,invalid_amount
+client4@example.com,Ticket 4,ticket,open,300 
