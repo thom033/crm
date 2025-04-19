@@ -22,7 +22,7 @@ public class DatabaseService {
             "DELETE FROM customer_login_info;",
             "DELETE FROM customer;",
             "DELETE FROM customer_expenses;",
-            "DELETE FROM customer_budget;",
+            "DELETE FROM budgets;",
             "SET FOREIGN_KEY_CHECKS = 1;"
         };
         for (String query : sql) {
