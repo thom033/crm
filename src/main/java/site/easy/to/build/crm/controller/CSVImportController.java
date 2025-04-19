@@ -14,10 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import site.easy.to.build.crm.entity.Budget;
-import site.easy.to.build.crm.entity.Contract;
 import site.easy.to.build.crm.entity.Customer;
 import site.easy.to.build.crm.entity.Lead;
-import site.easy.to.build.crm.entity.Ticket;
 import site.easy.to.build.crm.service.ImportCSV.CsvImportService;
 
 import java.io.File;
@@ -51,29 +49,46 @@ public class CSVImportController {
         }
         
         try {
+            // Clear any previous errors
+            csvImportService.clearImportErrors();
+            
             switch (type) {
                 case "tickets":
-                    csvImportService.parseTicketsFromCsv(filePath);
+                    List<String> ticketErrors = csvImportService.parseTicketsFromCsv(filePath);
+                    if (!ticketErrors.isEmpty()) {
+                        model.addAttribute("errors", ticketErrors);
+                        return "csv/import-errors";
+                    }
                     csvImportService.saveTickets();
                     System.out.println("Tickets saved successfully");
                     return "redirect:/employee/ticket/manager/all-tickets";
                 case "customers":
                     List<Customer> customers = csvImportService.parseCustomersFromCsv(filePath);
+                    List<String> customerErrors = csvImportService.getImportErrors();
+                    if (!customerErrors.isEmpty()) {
+                        model.addAttribute("errors", customerErrors);
+                        return "csv/import-errors";
+                    }
                     csvImportService.saveCustomers(customers);
                     System.out.println("Customers saved successfully");
                     return "redirect:/employee/customer/manager/all-customers";
                 case "leads":
                     List<Lead> leads = csvImportService.parseLeadsFromCsv(filePath);
+                    List<String> leadErrors = csvImportService.getImportErrors();
+                    if (!leadErrors.isEmpty()) {
+                        model.addAttribute("errors", leadErrors);
+                        return "csv/import-errors";
+                    }
                     csvImportService.saveLeads(leads);
                     System.out.println("Leads saved successfully");
                     return "redirect:/employee/lead/manager/all-leads";
-                case "contracts":
-                    List<Contract> contracts = csvImportService.parseContractsFromCsv(filePath);
-                    csvImportService.saveContracts(contracts);
-                    System.out.println("Contracts saved successfully");
-                    return "redirect:/employee/contract/manager/show-all";
                 case "budget": // Add handling for budget
                     List<Budget> budgets = csvImportService.parseBudgetFromCsv(filePath);
+                    List<String> budgetErrors = csvImportService.getImportErrors();
+                    if (!budgetErrors.isEmpty()) {
+                        model.addAttribute("errors", budgetErrors);
+                        return "csv/import-errors";
+                    }
                     csvImportService.saveBudgets(budgets);
                     System.out.println("Budgets saved successfully");
                     return "redirect:/employee/csv/import-tickets";
@@ -98,6 +113,9 @@ public class CSVImportController {
             @RequestParam("fileTicket") MultipartFile fileTicket,
             Model model) {
         try {
+            // Clear any previous errors
+            csvImportService.clearImportErrors();
+            
             // Process Customers
             File tempCustomerFile = File.createTempFile("customers", ".csv");
             fileCustomer.transferTo(tempCustomerFile);
@@ -109,6 +127,11 @@ public class CSVImportController {
                 return "csv/import-errors"; // Return error page if validation fails
             }
             List<Customer> customers = csvImportService.parseCustomersFromCsv(customerFilePath);
+            List<String> customerParseErrors = csvImportService.getImportErrors();
+            if (!customerParseErrors.isEmpty()) {
+                model.addAttribute("errors", customerParseErrors);
+                return "csv/import-errors";
+            }
             csvImportService.saveCustomers(customers);
 
             // Process Budgets
@@ -122,6 +145,11 @@ public class CSVImportController {
                 return "csv/import-errors"; // Return error page if validation fails
             }
             List<Budget> budgets = csvImportService.parseBudgetFromCsv(budgetFilePath);
+            List<String> budgetParseErrors = csvImportService.getImportErrors();
+            if (!budgetParseErrors.isEmpty()) {
+                model.addAttribute("errors", budgetParseErrors);
+                return "csv/import-errors";
+            }
             csvImportService.saveBudgets(budgets);
 
             // Process Tickets
@@ -134,7 +162,11 @@ public class CSVImportController {
                 model.addAttribute("errors", ticketErrors);
                 return "csv/import-errors"; // Return error page if validation fails
             }
-            csvImportService.parseTicketsFromCsv(ticketFilePath);
+            List<String> ticketParseErrors = csvImportService.parseTicketsFromCsv(ticketFilePath);
+            if (!ticketParseErrors.isEmpty()) {
+                model.addAttribute("errors", ticketParseErrors);
+                return "csv/import-errors";
+            }
             csvImportService.saveTickets();
 
             return "redirect:/employee/csv/import-tickets"; // Redirect to a success page

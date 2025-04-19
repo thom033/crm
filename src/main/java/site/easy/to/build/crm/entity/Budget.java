@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "customer_budget")
+@Table(name = "budgets")
 @StartDateBeforeEndDate
 public class Budget {
 
@@ -25,12 +25,14 @@ public class Budget {
     @Digits(integer = 10, fraction = 2, message = "Amount must be a valid number with up to 2 decimal places")
     @DecimalMin(value = "0.00", inclusive = true, message = "Amount must be ≥ 0.00")
     @DecimalMax(value = "9999999.99", inclusive = true, message = "Amount must be ≤ 9999999.99")
-    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    @Column(name = "budget_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "budget_name")
+    private String budgetName;
     public Budget() {
     }
 
@@ -70,5 +72,13 @@ public class Budget {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getBudgetName() {
+        return budgetName;
+    }
+
+    public void setBudgetName(String budgetName) {
+        this.budgetName = budgetName;
     }
 }

@@ -51,7 +51,6 @@ public class ExpenseService {
         expense.setAmount(amount.doubleValue());
         expense.setCreatedAt(LocalDateTime.now());
         expense.setUpdatedAt(LocalDateTime.now());
-        expense.setUser(ticket.getEmployee());
 
         return expenseRepository.save(expense);
     }
@@ -62,7 +61,6 @@ public class ExpenseService {
         expense.setAmount(amount.doubleValue());
         expense.setCreatedAt(LocalDateTime.now());
         expense.setUpdatedAt(LocalDateTime.now());
-        expense.setUser(lead.getEmployee());
 
         return expenseRepository.save(expense);
     }

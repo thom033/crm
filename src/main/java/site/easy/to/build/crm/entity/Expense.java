@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "customer_expenses")
+@Table(name = "expenses")
 public class Expense {
 
     @Id
@@ -24,19 +24,24 @@ public class Expense {
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.00", message = "Amount must be ≥ 0.00")
     @DecimalMax(value = "9999999.99", message = "Amount must be ≤ 9999999.99")
-    @Column(name = "amount", nullable = false)
+    @Column(name = "expense_amount", nullable = false)
     private double amount;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "update_at")
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @NotNull(message = "User ID is required")
+    @Column(name="expense_date")
+    private LocalDateTime expenseDate = LocalDateTime.now();
+
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
+    @Column(name="expense_type_id")
+    private int expenseTypeId;
 
     // Getters and Setters
 
@@ -80,14 +85,6 @@ public class Expense {
         this.createdAt = createdAt;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
@@ -95,4 +92,29 @@ public class Expense {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public LocalDateTime getExpenseDate() {
+        return expenseDate;
+    }
+
+    public void setExpenseDate(LocalDateTime expenseDate) {
+        this.expenseDate = expenseDate;
+    }
+
+    public int getExpenseTypeId() {
+        return expenseTypeId;
+    }
+
+    public void setExpenseTypeId(int expenseTypeId) {
+        this.expenseTypeId = expenseTypeId;
+    }
+    
 }
